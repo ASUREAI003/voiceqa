@@ -67,12 +67,18 @@
       })
         .then((res) => res.json())
         .then((data) => {
-          // 偵測是否是影片連結（只支援 YouTube）
+          // 檢查是否是 YouTube 影片連結
           const ytMatch = data.answer.match(/https:\/\/www\.youtube\.com\/watch\?v=([^\s]+)/);
           if (ytMatch) {
             const videoId = ytMatch[1];
-            showVideo(videoId);
-            document.getElementById("answer").innerText = "請觀看影片";
+            const msg = "請觀看影片";
+            document.getElementById("answer").innerText = msg;
+
+            const speak = new SpeechSynthesisUtterance(msg);
+            speak.onend = function () {
+              showVideo(videoId); // ✅ 唸完再顯示影片
+            };
+            speechSynthesis.speak(speak);
           } else {
             closeVideo();
             let display = "AI 回答：" + data.answer;
