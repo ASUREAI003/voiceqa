@@ -1,37 +1,11 @@
-require("dotenv").config();
-const express = require("express");
-const bodyParser = require("body-parser");
-const path = require("path");
+// 引入所需模組（如果前面沒寫 fs，要補上）
+const fs = require("fs");
 const { OpenAI } = require("openai");
 
-const app = express();
-const port = process.env.PORT || 3000;
-
+// 初始化 OpenAI
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
-// 提供 index.html
-app.use(express.static(__dirname));
-app.get("/", (req, res) => {
-  res.sendFile(path.join(__dirname, "index.html"));
-});
-
-// 模擬問答資料（你可改為連接資料庫）
-const qaList = [
-  {
-    question: "怎麼點餐？",
-    answer: "您可以在現場的自助機台或線上系統點餐。",
-  },
-  {
-    question: "有哪些付款方式？",
-    answer: "支援信用卡、LINE Pay、Apple Pay。",
-  },
-  {
-    question: "營業時間是幾點？",
-    answer: "每日 11:00 到晚上 10:00。",
-  },
-];
-
-// 語意比對函式
+// 內積比對函數
 function cosineSimilarity(a, b) {
   const dot = a.reduce((sum, val, i) => sum + val * b[i], 0);
   const normA = Math.sqrt(a.reduce((sum, val) => sum + val * val, 0));
@@ -39,28 +13,47 @@ function cosineSimilarity(a, b) {
   return dot / (normA * normB);
 }
 
+// 問答 POST API（使用 qanda.txt）
 app.post("/ask", async (req, res) => {
   const userQuestion = req.body.question;
 
-  // 使用者問句轉向量
+  const text = fs.readFileSync("qanda.txt", "utf-8");
+  const lines = text.split("\n").filter(line => line.trim());
+
+  const qaPairs = [];
+  let question = "", answer = "";
+
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i].trim();
+    if (line.startsWith("Q")) {
+      question = line.replace(/^Q\d*：/, "").trim();
+    } else if (line.startsWith("A：")) {
+      answer = line.replace(/^A：/, "").trim();
+      while (i + 1 < lines.length && !lines[i + 1].startsWith("Q")) {
+        i++;
+        answer += "\n" + lines[i].trim();
+      }
+      qaPairs.push({ question, answer });
+    }
+  }
+
   const userEmbeddingRes = await openai.embeddings.create({
     input: userQuestion,
     model: "text-embedding-3-small",
   });
   const userVector = userEmbeddingRes.data[0].embedding;
 
-  // 比對本地資料
   let bestMatch = null;
   let bestScore = -1;
 
-  for (let qa of qaList) {
-    const dbEmbeddingRes = await openai.embeddings.create({
+  for (let qa of qaPairs) {
+    const embedRes = await openai.embeddings.create({
       input: qa.question,
       model: "text-embedding-3-small",
     });
-    const dbVector = dbEmbeddingRes.data[0].embedding;
+    const qaVector = embedRes.data[0].embedding;
 
-    const score = cosineSimilarity(userVector, dbVector);
+    const score = cosineSimilarity(userVector, qaVector);
     if (score > bestScore) {
       bestScore = score;
       bestMatch = qa;
@@ -70,8 +63,4 @@ app.post("/ask", async (req, res) => {
   res.json({
     answer: bestMatch ? bestMatch.answer : "很抱歉，找不到相關答案。",
   });
-});
-
-app.listen(port, () => {
-  console.log(`伺服器已啟動：http://localhost:${port}`);
 });
