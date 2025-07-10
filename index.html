@@ -28,7 +28,12 @@
       })
         .then((res) => res.json())
         .then((data) => {
-          document.getElementById("answer").innerText = "AI 回答：" + data.answer;
+          let display = "AI 回答：" + data.answer;
+          if (data.matchedQuestion) {
+            display += `\n（來源問題：「${data.matchedQuestion}」，相似度：${data.similarity}）`;
+          }
+          document.getElementById("answer").innerText = display;
+
           const speak = new SpeechSynthesisUtterance(data.answer);
           speechSynthesis.speak(speak);
         });

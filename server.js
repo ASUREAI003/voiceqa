@@ -15,7 +15,7 @@ app.get("/", (req, res) => {
   res.sendFile(path.join(__dirname, "index.html"));
 });
 
-// ✅ 語音查詢（模糊比對）
+// ✅ 語音查詢 API（模糊比對，Q+A，顯示相似度）
 app.post("/ask", async (req, res) => {
   try {
     const userQuestion = req.body.question;
@@ -43,7 +43,8 @@ app.post("/ask", async (req, res) => {
     let bestScore = 0;
 
     for (let qa of qaPairs) {
-      const similarity = stringSimilarity.compareTwoStrings(userQuestion, qa.question);
+      const fullText = qa.question + " " + qa.answer;
+      const similarity = stringSimilarity.compareTwoStrings(userQuestion, fullText);
       if (similarity > bestScore) {
         bestScore = similarity;
         bestMatch = qa;
@@ -52,6 +53,8 @@ app.post("/ask", async (req, res) => {
 
     res.json({
       answer: bestScore >= 0.3 ? bestMatch.answer : "很抱歉，找不到相關答案。",
+      matchedQuestion: bestScore >= 0.3 ? bestMatch.question : null,
+      similarity: (bestScore * 100).toFixed(1) + "%"
     });
 
   } catch (err) {
@@ -60,7 +63,7 @@ app.post("/ask", async (req, res) => {
   }
 });
 
-// ✅ 顯示所有 Q&A（文字檔讀取）
+// ✅ 顯示所有 Q&A
 app.get("/list", (req, res) => {
   try {
     const text = fs.readFileSync("qanda.txt", "utf-8");
@@ -85,12 +88,11 @@ app.get("/list", (req, res) => {
 
     res.json(qaPairs);
   } catch (err) {
-    console.error("❌ /list 讀取錯誤：", err.message);
+    console.error("❌ /list 錯誤：", err.message);
     res.status(500).json({ error: "讀取失敗" });
   }
 });
 
-// 啟動
 app.listen(port, () => {
   console.log(`✅ HTTP 伺服器啟動中：http://localhost:${port}`);
 });
