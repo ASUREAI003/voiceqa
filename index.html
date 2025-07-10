@@ -3,6 +3,36 @@
 <head>
   <meta charset="UTF-8" />
   <title>語音Q&A查詢</title>
+  <style>
+    #videoPlayer {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      width: 360px;
+      height: 220px;
+      background: #000;
+      border: 2px solid #ccc;
+      z-index: 9999;
+      display: none;
+    }
+    #videoPlayer iframe {
+      width: 100%;
+      height: 100%;
+    }
+    #closeBtn {
+      position: absolute;
+      top: 5px;
+      right: 10px;
+      color: white;
+      background-color: red;
+      border: none;
+      border-radius: 50%;
+      width: 24px;
+      height: 24px;
+      font-weight: bold;
+      cursor: pointer;
+    }
+  </style>
 </head>
 <body>
   <h2>請點下方麥克風說出問題</h2>
@@ -13,6 +43,12 @@
   <hr />
   <button onclick="listQA()">📋 顯示所有 Q&A</button>
   <div id="qalist" style="margin-top: 1em;"></div>
+
+  <!-- ✅ 浮動影片播放器 -->
+  <div id="videoPlayer">
+    <button id="closeBtn" onclick="closeVideo()">X</button>
+    <iframe id="videoFrame" src="" frameborder="0" allowfullscreen></iframe>
+  </div>
 
   <script>
     const recognition = new webkitSpeechRecognition();
@@ -41,6 +77,9 @@
 
           const speak = new SpeechSynthesisUtterance(data.answer);
           speechSynthesis.speak(speak);
+
+          // ✅ 播放 YouTube 影片（若回答內有影片）
+          showVideoIfAny(data.answer);
         });
     };
 
@@ -63,6 +102,23 @@
         .catch((err) => {
           document.getElementById("qalist").innerText = "⚠️ 載入失敗：" + err.message;
         });
+    }
+
+    function showVideoIfAny(text) {
+      const ytMatch = text.match(/https:\/\/www\.youtube\.com\/watch\?v=([^\s]+)/);
+      if (ytMatch) {
+        const videoId = ytMatch[1];
+        const embedUrl = `https://www.youtube.com/embed/${videoId}`;
+        document.getElementById("videoFrame").src = embedUrl;
+        document.getElementById("videoPlayer").style.display = "block";
+      } else {
+        closeVideo();
+      }
+    }
+
+    function closeVideo() {
+      document.getElementById("videoPlayer").style.display = "none";
+      document.getElementById("videoFrame").src = "";
     }
   </script>
 </body>
