@@ -10,12 +10,13 @@ app.use(express.static(__dirname));
 
 const port = 3000;
 
-// 首頁
+// ✅ 常見關鍵字清單（可自行擴充）
+const keywordList = ["客服", "聯絡", "QR Code", "協助", "LINE", "諮詢"];
+
 app.get("/", (req, res) => {
   res.sendFile(path.join(__dirname, "index.html"));
 });
 
-// ✅ Q&A 查詢 API（加權模糊比對）
 app.post("/ask", async (req, res) => {
   try {
     const userQuestion = req.body.question;
@@ -39,10 +40,18 @@ app.post("/ask", async (req, res) => {
       }
     }
 
+    // ✅ 是否啟用關鍵字過濾
+    const hasKeyword = keywordList.some(kw => userQuestion.includes(kw));
+    const filteredPairs = hasKeyword
+      ? qaPairs.filter(qa =>
+          keywordList.some(kw => qa.question.includes(kw) || qa.answer.includes(kw))
+        )
+      : qaPairs;
+
     let bestMatch = null;
     let bestScore = 0;
 
-    for (let qa of qaPairs) {
+    for (let qa of filteredPairs) {
       const qScore = stringSimilarity.compareTwoStrings(userQuestion, qa.question);
       const aScore = stringSimilarity.compareTwoStrings(userQuestion, qa.answer);
       const similarity = qScore * 0.7 + aScore * 0.3;
@@ -74,7 +83,6 @@ app.post("/ask", async (req, res) => {
   }
 });
 
-// ✅ 顯示所有 Q&A
 app.get("/list", (req, res) => {
   try {
     const text = fs.readFileSync("qanda.txt", "utf-8");
