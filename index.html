@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8" />
+  <title>語音Q&A查詢</title>
+</head>
+<body>
+  <h2>請點下方麥克風說出問題</h2>
+  <button onclick="startRecognition()">🎤 說話</button>
+  <p id="question"></p>
+  <p id="answer"></p>
+
+  <script>
+    const recognition = new webkitSpeechRecognition();
+    recognition.lang = "zh-TW";
+    recognition.onresult = function (event) {
+      const question = event.results[0][0].transcript;
+      document.getElementById("question").innerText = "您問的問題是：" + question;
+
+      fetch("/ask", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ question }),
+      })
+        .then((res) => res.json())
+        .then((data) => {
+          document.getElementById("answer").innerText = "AI 回答：" + data.answer;
+          const speak = new SpeechSynthesisUtterance(data.answer);
+          speechSynthesis.speak(speak);
+        });
+    };
+
+    function startRecognition() {
+      recognition.start();
+    }
+  </script>
+</body>
+</html>
