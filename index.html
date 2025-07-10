@@ -6,14 +6,15 @@
   <style>
     #videoPlayer {
       position: fixed;
-      bottom: 20px;
-      right: 20px;
-      width: 360px;
-      height: 220px;
+      top: 50%;
+      left: 50%;
+      width: 640px;
+      height: 480px;
       background: #000;
       border: 2px solid #ccc;
       z-index: 9999;
       display: none;
+      transform: translate(-50%, -50%);
     }
     #videoPlayer iframe {
       width: 100%;
@@ -31,6 +32,7 @@
       height: 24px;
       font-weight: bold;
       cursor: pointer;
+      z-index: 10000;
     }
   </style>
 </head>
@@ -44,7 +46,7 @@
   <button onclick="listQA()">📋 顯示所有 Q&A</button>
   <div id="qalist" style="margin-top: 1em;"></div>
 
-  <!-- ✅ 浮動影片播放器 -->
+  <!-- ✅ 中央影片播放器 -->
   <div id="videoPlayer">
     <button id="closeBtn" onclick="closeVideo()">X</button>
     <iframe id="videoFrame" src="" frameborder="0" allowfullscreen></iframe>
@@ -65,21 +67,27 @@
       })
         .then((res) => res.json())
         .then((data) => {
-          let display = "AI 回答：" + data.answer;
-          if (data.matchedQuestion) {
-            display += `\n（來源問題：「${data.matchedQuestion}」，總相似度：${data.similarity}`;
-            if (data.debug) {
-              display += `，Q：${data.debug.qScore}，A：${data.debug.aScore}`;
+          // 偵測是否是影片連結（只支援 YouTube）
+          const ytMatch = data.answer.match(/https:\/\/www\.youtube\.com\/watch\?v=([^\s]+)/);
+          if (ytMatch) {
+            const videoId = ytMatch[1];
+            showVideo(videoId);
+            document.getElementById("answer").innerText = "請觀看影片";
+          } else {
+            closeVideo();
+            let display = "AI 回答：" + data.answer;
+            if (data.matchedQuestion) {
+              display += `\n（來源問題：「${data.matchedQuestion}」，總相似度：${data.similarity}`;
+              if (data.debug) {
+                display += `，Q：${data.debug.qScore}，A：${data.debug.aScore}`;
+              }
+              display += "）";
             }
-            display += "）";
+            document.getElementById("answer").innerText = display;
+
+            const speak = new SpeechSynthesisUtterance(data.answer);
+            speechSynthesis.speak(speak);
           }
-          document.getElementById("answer").innerText = display;
-
-          const speak = new SpeechSynthesisUtterance(data.answer);
-          speechSynthesis.speak(speak);
-
-          // ✅ 播放 YouTube 影片（若回答內有影片）
-          showVideoIfAny(data.answer);
         });
     };
 
@@ -104,16 +112,10 @@
         });
     }
 
-    function showVideoIfAny(text) {
-      const ytMatch = text.match(/https:\/\/www\.youtube\.com\/watch\?v=([^\s]+)/);
-      if (ytMatch) {
-        const videoId = ytMatch[1];
-        const embedUrl = `https://www.youtube.com/embed/${videoId}`;
-        document.getElementById("videoFrame").src = embedUrl;
-        document.getElementById("videoPlayer").style.display = "block";
-      } else {
-        closeVideo();
-      }
+    function showVideo(videoId) {
+      const embedUrl = `https://www.youtube.com/embed/${videoId}`;
+      document.getElementById("videoFrame").src = embedUrl;
+      document.getElementById("videoPlayer").style.display = "block";
     }
 
     function closeVideo() {
