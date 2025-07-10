@@ -10,6 +10,10 @@
   <p id="question"></p>
   <p id="answer"></p>
 
+  <hr />
+  <button onclick="listQA()">📋 顯示所有 Q&A</button>
+  <div id="qalist"></div>
+
   <script>
     const recognition = new webkitSpeechRecognition();
     recognition.lang = "zh-TW";
@@ -32,6 +36,23 @@
 
     function startRecognition() {
       recognition.start();
+    }
+
+    function listQA() {
+      fetch("/list")
+        .then((res) => res.json())
+        .then((data) => {
+          const container = document.getElementById("qalist");
+          container.innerHTML = "<h3>目前 Q&A：</h3>";
+          data.forEach((qa, index) => {
+            const div = document.createElement("div");
+            div.innerHTML = `<strong>Q${index + 1}：</strong>${qa.question}<br/><strong>A：</strong>${qa.answer}<br/><br/>`;
+            container.appendChild(div);
+          });
+        })
+        .catch((err) => {
+          document.getElementById("qalist").innerText = "⚠️ 載入失敗：" + err.message;
+        });
     }
   </script>
 </body>
