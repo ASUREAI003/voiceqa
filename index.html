@@ -8,15 +8,16 @@
   <h2>請點下方麥克風說出問題</h2>
   <button onclick="startRecognition()">🎤 說話</button>
   <p id="question"></p>
-  <p id="answer"></p>
+  <pre id="answer" style="white-space: pre-wrap;"></pre>
 
   <hr />
   <button onclick="listQA()">📋 顯示所有 Q&A</button>
-  <div id="qalist"></div>
+  <div id="qalist" style="margin-top: 1em;"></div>
 
   <script>
     const recognition = new webkitSpeechRecognition();
     recognition.lang = "zh-TW";
+
     recognition.onresult = function (event) {
       const question = event.results[0][0].transcript;
       document.getElementById("question").innerText = "您問的問題是：" + question;
@@ -30,7 +31,11 @@
         .then((data) => {
           let display = "AI 回答：" + data.answer;
           if (data.matchedQuestion) {
-            display += `\n（來源問題：「${data.matchedQuestion}」，相似度：${data.similarity}）`;
+            display += `\n（來源問題：「${data.matchedQuestion}」，總相似度：${data.similarity}`;
+            if (data.debug) {
+              display += `，Q：${data.debug.qScore}，A：${data.debug.aScore}`;
+            }
+            display += "）";
           }
           document.getElementById("answer").innerText = display;
 

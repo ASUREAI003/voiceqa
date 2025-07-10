@@ -15,7 +15,7 @@ app.get("/", (req, res) => {
   res.sendFile(path.join(__dirname, "index.html"));
 });
 
-// ✅ 語音查詢 API（模糊比對，Q+A，顯示相似度）
+// ✅ Q&A 查詢 API（加權模糊比對）
 app.post("/ask", async (req, res) => {
   try {
     const userQuestion = req.body.question;
@@ -43,18 +43,29 @@ app.post("/ask", async (req, res) => {
     let bestScore = 0;
 
     for (let qa of qaPairs) {
-      const fullText = qa.question + " " + qa.answer;
-      const similarity = stringSimilarity.compareTwoStrings(userQuestion, fullText);
+      const qScore = stringSimilarity.compareTwoStrings(userQuestion, qa.question);
+      const aScore = stringSimilarity.compareTwoStrings(userQuestion, qa.answer);
+      const similarity = qScore * 0.7 + aScore * 0.3;
+
       if (similarity > bestScore) {
         bestScore = similarity;
-        bestMatch = qa;
+        bestMatch = {
+          question: qa.question,
+          answer: qa.answer,
+          qScore,
+          aScore
+        };
       }
     }
 
     res.json({
       answer: bestScore >= 0.3 ? bestMatch.answer : "很抱歉，找不到相關答案。",
       matchedQuestion: bestScore >= 0.3 ? bestMatch.question : null,
-      similarity: (bestScore * 100).toFixed(1) + "%"
+      similarity: (bestScore * 100).toFixed(1) + "%",
+      debug: bestMatch ? {
+        qScore: (bestMatch.qScore * 100).toFixed(1) + "%",
+        aScore: (bestMatch.aScore * 100).toFixed(1) + "%"
+      } : null
     });
 
   } catch (err) {
