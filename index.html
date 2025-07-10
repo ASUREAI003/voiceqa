@@ -34,6 +34,18 @@
       cursor: pointer;
       z-index: 10000;
     }
+    #videoHint {
+      position: absolute;
+      bottom: 5px;
+      left: 50%;
+      transform: translateX(-50%);
+      color: yellow;
+      background-color: rgba(0, 0, 0, 0.7);
+      padding: 5px 10px;
+      font-size: 14px;
+      border-radius: 5px;
+      z-index: 10001;
+    }
   </style>
 </head>
 <body>
@@ -49,7 +61,8 @@
   <!-- ✅ 中央影片播放器 -->
   <div id="videoPlayer">
     <button id="closeBtn" onclick="closeVideo()">X</button>
-    <iframe id="videoFrame" src="" frameborder="0" allowfullscreen></iframe>
+    <iframe id="videoFrame" src="" frameborder="0" allow="autoplay" allowfullscreen></iframe>
+    <div id="videoHint">🔊 點一下播放開聲</div>
   </div>
 
   <script>
@@ -76,7 +89,7 @@
 
             const speak = new SpeechSynthesisUtterance(msg);
             speak.onend = function () {
-              showVideo(videoId); // ✅ 唸完再顯示影片
+              showVideo(videoId); // ✅ 唸完後顯示影片
             };
             speechSynthesis.speak(speak);
           } else {
@@ -119,14 +132,16 @@
     }
 
     function showVideo(videoId) {
-      const embedUrl = `https://www.youtube.com/embed/${videoId}`;
+      const embedUrl = `https://www.youtube.com/embed/${videoId}?autoplay=1&mute=1`;
       document.getElementById("videoFrame").src = embedUrl;
       document.getElementById("videoPlayer").style.display = "block";
+      document.getElementById("videoHint").style.display = "block";
     }
 
     function closeVideo() {
       document.getElementById("videoPlayer").style.display = "none";
       document.getElementById("videoFrame").src = "";
+      document.getElementById("videoHint").style.display = "none";
     }
   </script>
 </body>
