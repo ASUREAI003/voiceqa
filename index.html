@@ -34,31 +34,6 @@
       cursor: pointer;
       z-index: 10000;
     }
-    #videoHint {
-      position: absolute;
-      bottom: 5px;
-      left: 50%;
-      transform: translateX(-50%);
-      color: yellow;
-      background-color: rgba(0, 0, 0, 0.7);
-      padding: 5px 10px;
-      font-size: 14px;
-      border-radius: 5px;
-      z-index: 10001;
-    }
-    #soundBtn {
-      position: absolute;
-      bottom: 10px;
-      right: 10px;
-      background-color: #00c853;
-      color: white;
-      border: none;
-      border-radius: 5px;
-      padding: 5px 10px;
-      font-size: 14px;
-      cursor: pointer;
-      z-index: 10001;
-    }
   </style>
 </head>
 <body>
@@ -75,8 +50,6 @@
   <div id="videoPlayer">
     <button id="closeBtn" onclick="closeVideo()">X</button>
     <iframe id="videoFrame" src="" frameborder="0" allow="autoplay" allowfullscreen></iframe>
-    <div id="videoHint">🔊 點一下播放開聲</div>
-    <button id="soundBtn" onclick="unmuteVideo()">開聲播放</button>
   </div>
 
   <script>
@@ -151,24 +124,11 @@
       const embedUrl = `https://www.youtube.com/embed/${videoId}?autoplay=1&mute=0`;
       document.getElementById("videoFrame").src = embedUrl;
       document.getElementById("videoPlayer").style.display = "block";
-      document.getElementById("videoHint").style.display = "block";
-      document.getElementById("soundBtn").style.display = "block";
-    }
-
-    function unmuteVideo() {
-      if (currentVideoId) {
-        const embedUrl = `https://www.youtube.com/embed/${currentVideoId}?autoplay=1&mute=0`;
-        document.getElementById("videoFrame").src = embedUrl;
-        document.getElementById("videoHint").style.display = "none";
-        document.getElementById("soundBtn").style.display = "none";
-      }
     }
 
     function closeVideo() {
       document.getElementById("videoPlayer").style.display = "none";
       document.getElementById("videoFrame").src = "";
-      document.getElementById("videoHint").style.display = "none";
-      document.getElementById("soundBtn").style.display = "none";
     }
   </script>
 </body>
