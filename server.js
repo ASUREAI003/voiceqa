@@ -2,6 +2,7 @@ const fs = require("fs");
 const path = require("path");
 const express = require("express");
 const bodyParser = require("body-parser");
+const stringSimilarity = require("string-similarity"); // ✅ 模糊比對套件
 
 const app = express();
 app.use(bodyParser.json());
@@ -13,7 +14,7 @@ app.get("/", (req, res) => {
   res.sendFile(path.join(__dirname, "index.html"));
 });
 
-// ✅ 簡單文字比對查詢
+// ✅ 模糊比對查詢 API
 app.post("/ask", async (req, res) => {
   try {
     const userQuestion = req.body.question;
@@ -37,14 +38,22 @@ app.post("/ask", async (req, res) => {
       }
     }
 
-    // 關鍵字比對（先找到第一個 Q 包含使用者提問的）
-    const match = qaPairs.find(qa =>
-      userQuestion.includes(qa.question.slice(0, 6)) // 取前幾字比對關鍵字
-    );
+    // 比對每個 Q 的相似度
+    let bestMatch = null;
+    let bestScore = 0;
+
+    for (let qa of qaPairs) {
+      const similarity = stringSimilarity.compareTwoStrings(userQuestion, qa.question);
+      if (similarity > bestScore) {
+        bestScore = similarity;
+        bestMatch = qa;
+      }
+    }
 
     res.json({
-      answer: match ? match.answer : "很抱歉，暫時找不到相關的答案。",
+      answer: bestScore >= 0.3 ? bestMatch.answer : "很抱歉，找不到相關答案。",
     });
+
   } catch (err) {
     console.error("❌ 查詢錯誤：", err.message);
     res.status(500).json({ answer: "伺服器錯誤，請稍後再試。" });
